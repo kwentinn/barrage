@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BulkBlock",
   "version": "0.1.0",
-  "description": "Bloque, depuis votre session instagram.com et à votre rythme, les comptes d'une liste que vous importez (fichier ou texte). Rien n'est envoyé hors d'Instagram.",
+  "description": "Bloque pas à pas, depuis votre session instagram.com, les comptes d'une liste que vous importez : un clic par profil, avec les gestes habituels de l'interface. Rien n'est envoyé hors d'Instagram.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.instagram.com/*"],
   "content_scripts": [

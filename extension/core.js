@@ -1,70 +1,7 @@
 "use strict";
-// Logique de blocage, sans dépendance au DOM ni à fetch (l'API est injectée) : testable sous Node.
+// Logique pure (sans DOM) : lecture de la liste, choix du prochain compte. Testable sous Node.
 //
-// etat : { faits: {compte: "bloqué"|"déjà bloqué"}, exclus: [compte...], introuvables: {compte: true} }  (muté sur place)
-// api  : { profil(compte) -> {id, bloqueParMoi} | null (introuvable), bloquer(id) -> void }
-
-const OPTIONS_PAR_DEFAUT = { delaiMinS: 30, delaiMaxS: 60, maxParSession: 10 };
-
-function attendre(ms, signal) {
-  return new Promise((resolve) => {
-    if (signal && signal.aborted) return resolve();
-    const fin = () => { clearTimeout(t); if (signal) signal.removeEventListener("abort", fin); resolve(); };
-    const t = setTimeout(fin, ms);
-    if (signal) signal.addEventListener("abort", fin);
-  });
-}
-
-function aTraiter(comptes, etat) {
-  const exclus = new Set(etat.exclus);
-  return comptes.filter((c) => !exclus.has(c.compte) && !etat.faits[c.compte] && !etat.introuvables[c.compte]);
-}
-
-// S'arrête à la première erreur réseau/API : mieux vaut s'arrêter que d'insister face à une limite d'Instagram.
-async function lancer({ comptes, etat, api, options, signal, surEvenement = () => {}, attendre: att = attendre, aleatoire = Math.random }) {
-  const o = { ...OPTIONS_PAR_DEFAUT, ...options };
-  const alea = (minS, maxS) => (minS + aleatoire() * Math.max(0, maxS - minS)) * 1000;
-  const resume = { bloques: 0, dejaBloques: 0, introuvables: 0, raison: "termine", erreur: null };
-  const liste = aTraiter(comptes, etat);
-
-  for (let i = 0; i < liste.length; i++) {
-    const c = liste[i];
-    if (signal && signal.aborted) { resume.raison = "arrete"; break; }
-    if (resume.bloques >= o.maxParSession) { resume.raison = "quota"; break; }
-    surEvenement({ type: "debut", compte: c });
-
-    let blocageEffectue = false;
-    try {
-      const profil = await api.profil(c.compte);
-      if (!profil) {
-        etat.introuvables[c.compte] = true;
-        resume.introuvables++;
-        surEvenement({ type: "introuvable", compte: c });
-      } else if (profil.bloqueParMoi) {
-        etat.faits[c.compte] = "déjà bloqué";
-        resume.dejaBloques++;
-        surEvenement({ type: "deja", compte: c });
-      } else {
-        await att(alea(2, 5), signal);
-        if (signal && signal.aborted) { resume.raison = "arrete"; break; }
-        await api.bloquer(profil.id);
-        etat.faits[c.compte] = "bloqué";
-        resume.bloques++;
-        blocageEffectue = true;
-        surEvenement({ type: "bloque", compte: c });
-      }
-    } catch (e) {
-      resume.raison = "erreur";
-      resume.erreur = e.message;
-      surEvenement({ type: "erreur", compte: c, message: e.message });
-      break;
-    }
-
-    surEvenement({ type: "etat" });
-    if (i < liste.length - 1) await att(blocageEffectue ? alea(o.delaiMinS, o.delaiMaxS) : alea(1, 3), signal);
-  }
-  return resume;
-}
+// etat : { faits: {compte: "bloqué"|"déjà bloqué"|...}, exclus: [compte...], introuvables: {compte: true} }
 
 // --- Lecture d'une liste fournie par l'utilisateur ---
 // Accepte : un JSON (tableau de pseudos ou d'objets {compte, nom?, classement?, type?}, ou {comptes: [...]}),
@@ -106,7 +43,24 @@ function lireListe(texte) {
   return [...vus.values()];
 }
 
+// --- Suivi de la liste ---
+function aTraiter(comptes, etat) {
+  const exclus = new Set(etat.exclus);
+  return comptes.filter((c) => !exclus.has(c.compte) && !etat.faits[c.compte] && !etat.introuvables[c.compte]);
+}
+
+// Pseudo du profil affiché si le chemin est exactement /pseudo/ (pas /pseudo/reels/, /explore/...), sinon null.
+function compteDepuisChemin(chemin) {
+  const m = /^\/([A-Za-z0-9._]+)\/?$/.exec(chemin);
+  return m ? pseudoValide(m[1]) : null;
+}
+
+// Prochain compte à traiter, en sautant éventuellement celui qui est déjà affiché.
+function prochain(comptes, etat, courant) {
+  return aTraiter(comptes, etat).find((c) => c.compte !== courant) || null;
+}
+
 // Export explicite : ne pas compter sur le partage des const/let de premier niveau entre fichiers de content script.
-const API_CORE = { lancer, aTraiter, attendre, lireListe, OPTIONS_PAR_DEFAUT };
+const API_CORE = { lireListe, aTraiter, compteDepuisChemin, prochain };
 if (typeof module !== "undefined") module.exports = API_CORE;
 else globalThis.BlocageCore = API_CORE;

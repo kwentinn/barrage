@@ -34,29 +34,36 @@ L'extension disparaît au redémarrage de Firefox.
    s'appuie sur l'API interne d'Instagram. Firefox Developer Edition / Nightly acceptent aussi les extensions non signées
    (`xpinstall.signatures.required` = false).
 
-### Utiliser
+### Utiliser (mode pas à pas)
 1. Ouvrir <https://www.instagram.com> connecté : bouton **BulkBlock** en bas à gauche.
 2. **Importer une liste** (fichier ou texte collé). Elle est mémorisée dans le navigateur.
 3. **Choisir les comptes** : décocher ceux à ne pas bloquer.
-4. Régler le délai (min. 10 s, 30–60 s par défaut) et le maximum par session (10 par défaut), puis **Démarrer**.
-   Pour chaque compte : recherche du profil, saut des comptes déjà bloqués ou introuvables, pause de quelques secondes, blocage, puis délai.
-   **Arrêter** interrompt avant le prochain blocage. La progression est mémorisée : relancez plus tard pour les comptes restants.
+4. **Ouvrir le prochain profil**, puis **Bloquer et passer au suivant** : l'extension clique pour vous sur ⋯ → Bloquer → Confirmer,
+   puis ouvre le profil suivant. Un clic par profil, 8 s minimum entre deux blocages.
+   - **Déjà bloqué, suivant** : si vous avez bloqué le compte vous-même (ou si l'extension s'est arrêtée à la confirmation).
+   - **Passer** : ne pas bloquer ce compte.
+   - Les comptes déjà bloqués sont reconnus (menu « Débloquer »), les profils indisponibles sont marqués « introuvable ».
+5. La progression est mémorisée : reprenez quand vous voulez.
 
 ### Ce qu'il faut savoir
-- Elle utilise l'**API web interne d'Instagram** (non documentée), avec votre session déjà ouverte : pas de mot de passe, pas de serveur tiers.
-  Ce n'est pas l'API officielle (qui n'offre pas de blocage) et cela sort du cadre des CGU d'Instagram.
-- Instagram peut changer ces appels sans préavis, ou limiter les actions répétées (blocage temporaire des actions). L'extension
-  **s'arrête à la première erreur** au lieu d'insister ; espacez les sessions.
-- **Non testée sur un vrai compte Instagram.** Testé : la logique (`node --test tests/`, fausse API), le panneau et l'import dans une page
-  locale simulée (`tests/harness.html`), et `web-ext lint`. Non vérifiés : les appels réels `/api/v1/users/web_profile_info/` et
-  `/api/v1/web/friendships/{id}/block/`. Faites un premier essai avec **un seul compte** (maximum par session = 1).
+- Elle **n'appelle aucune API** : elle actionne l'interface web d'Instagram, avec votre session déjà ouverte. Pas de mot de passe,
+  pas de serveur tiers. L'API interne `web_profile_info` renvoyait systématiquement HTTP 429 (essayée sur un vrai compte), d'où ce mode.
+- Elle repère les boutons par leur libellé (« Options », « Bloquer », « Débloquer », en français et en anglais). Si Instagram
+  change son interface, elle **s'arrête et indique l'étape** (avec les boutons vus) : utilisez alors *Déjà bloqué, suivant* après avoir
+  bloqué à la main. Si la confirmation propose plusieurs choix (ex. « et d'autres comptes possibles »), elle s'arrête aussi plutôt
+  que de choisir à votre place.
+- Cela reste un usage automatisé de l'interface, hors du cadre strict des CGU d'Instagram ; le rythme d'un clic par profil limite le risque
+  de limitation temporaire des actions, sans l'éliminer.
+- **Pas encore essayée sur de vrais profils.** Testé : la logique (`node --test tests/`), le parcours complet sur un faux profil
+  (`tests/fake-profile.html` : blocage, déjà bloqué, page indisponible, confirmation à plusieurs choix) et `web-ext lint`.
+  Faites un premier essai avec **un seul compte**.
 
 ### Développer
 ```bash
-node --test tests/                # logique de blocage et lecture de liste (core.js)
+node --test tests/                # lecture de liste, suivi de progression (core.js)
 cd extension && npx web-ext lint
 cd extension && npx web-ext run   # lance Firefox avec l'extension
-node serve.js                     # puis http://localhost:5173/tests/harness.html : panneau sans Instagram
+node serve.js                     # puis http://localhost:5173/alice/ : faux profil Instagram pour essayer le parcours sans Instagram
 ```
 
 ## Avertissement sur la liste

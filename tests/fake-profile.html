@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Faux profil Instagram (test)</title>
+<style>
+  body { font: 16px system-ui; margin: 24px; }
+  [role=dialog] { position: fixed; inset: 30% 30%; background: #fff; border: 1px solid #999; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  svg { cursor: pointer; }
+</style></head>
+<body>
+<!-- Simulation du DOM supposé d'Instagram (⋯ aria-label="Options", menu et confirmation en role="dialog").
+     Cas particuliers : /ghost/ = page indisponible ; /multichoix/ = confirmation avec plusieurs choix. -->
+<header>
+  <h2 id="nom"></h2>
+  <div role="button" id="opt" tabindex="0"><svg aria-label="Options" width="24" height="24" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
+  <button id="suivre">Suivre</button>
+</header>
+<main id="corps"></main>
+<script>
+  // Faux stockage d'extension (persistant d'une page à l'autre) + confirm automatique
+  window.chrome = { storage: { local: {
+    get: async (k) => Object.fromEntries(k.filter((x) => localStorage.getItem("fake-ext:" + x) !== null).map((x) => [x, JSON.parse(localStorage.getItem("fake-ext:" + x))])),
+    set: async (o) => { for (const [k, v] of Object.entries(o)) localStorage.setItem("fake-ext:" + k, JSON.stringify(v)); },
+  } } };
+  window.confirm = () => true;
+
+  const user = location.pathname.replace(/\//g, "");
+  const cle = "fake-blocked:" + user;
+  const bloque = () => localStorage.getItem(cle) === "1";
+  const $ = (id) => document.getElementById(id);
+  $("nom").textContent = user;
+  const maj = () => { $("suivre").textContent = bloque() ? "Débloquer" : "Suivre"; };
+  maj();
+
+  if (user === "ghost") {
+    document.querySelector("header").remove();
+    $("corps").textContent = "Désolé, cette page n'est pas disponible.";
+  }
+
+  function dialogue(boutons) {
+    document.querySelectorAll("[role=dialog]").forEach((d) => d.remove());
+    const d = document.createElement("div"); d.setAttribute("role", "dialog");
+    for (const [texte, action] of boutons) {
+      const b = document.createElement("button"); b.textContent = texte;
+      b.onclick = () => setTimeout(action, 200); d.append(b);
+    }
+    document.body.append(d);
+  }
+  const fermer = () => document.querySelectorAll("[role=dialog]").forEach((d) => d.remove());
+
+  $("opt") && ($("opt").onclick = () => setTimeout(() => {
+    if (bloque()) return dialogue([["Débloquer", fermer], ["Annuler", fermer]]);
+    dialogue([["Bloquer", confirmation], ["Restreindre", fermer], ["Signaler", fermer], ["Annuler", fermer]]);
+  }, 150));
+
+  function confirmation() {
+    if (user === "multichoix") {
+      return dialogue([[`Bloquer le compte de ${user}`, fermer], [`Bloquer ${user} et d'autres comptes possibles`, fermer], ["Annuler", fermer]]);
+    }
+    dialogue([["Bloquer", () => { localStorage.setItem(cle, "1"); maj(); dialogue([["OK", fermer]]); }], ["Annuler", fermer]]);
+  }
+</script>
+<script src="/extension/core.js"></script>
+<script src="/extension/content.js"></script>
+</body></html>
