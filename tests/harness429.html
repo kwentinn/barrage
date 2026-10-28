@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>harness 429</title>
+<script>
+  const mem = {};
+  window.chrome = { storage: { local: {
+    get: async (k) => Object.fromEntries(k.filter((x) => x in mem).map((x) => [x, JSON.parse(mem[x])])),
+    set: async (o) => { for (const [k, v] of Object.entries(o)) mem[k] = JSON.stringify(v); },
+  } } };
+  window.confirm = () => true; document.cookie = "csrftoken=test";
+  // simule la réponse d'Instagram : 429 avec message et Retry-After
+  window.fetch = async () => new Response(JSON.stringify({ message: "Please wait a few minutes before you try again.", status: "fail" }), { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "900" } });
+</script>
+<script src="../extension/core.js"></script>
+<script src="../extension/content.js"></script>

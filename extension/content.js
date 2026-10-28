@@ -26,11 +26,22 @@
     try { return await r.json(); } catch (e) { throw new Error(`Réponse inattendue d'Instagram (HTTP ${r.status}). Êtes-vous bien connecté ?`); }
   }
 
+  // Message d'erreur lisible pour une réponse non-OK, avec le détail renvoyé par Instagram (message, Retry-After).
+  async function detailErreur(r, action) {
+    let message = "";
+    try { message = (await r.clone().json()).message || ""; } catch (e) {}
+    const attente = r.headers.get("Retry-After");
+    const base = r.status === 429
+      ? `Instagram limite les requêtes (HTTP 429) pour ${action}. Patientez au moins 30 min avant de réessayer, ou essayez depuis une autre connexion.`
+      : `Instagram a refusé ${action} (HTTP ${r.status}). Limite atteinte ou session expirée ?`;
+    return base + (message ? ` Message : « ${message} ».` : "") + (attente ? ` Retry-After : ${attente} s.` : "");
+  }
+
   const api = {
     async profil(compte) {
       const r = await requete(`/api/v1/users/web_profile_info/?username=${encodeURIComponent(compte)}`);
       if (r.status === 404) return null;
-      if (!r.ok) throw new Error(`Instagram a refusé la recherche de @${compte} (HTTP ${r.status}). Limite atteinte ou session expirée ?`);
+      if (!r.ok) throw new Error(await detailErreur(r, `la recherche de @${compte}`));
       const u = (await json(r)).data?.user;
       return u ? { id: u.id, bloqueParMoi: !!u.blocked_by_viewer } : null;
     },
@@ -40,8 +51,9 @@
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "",
       });
+      if (!r.ok) throw new Error(await detailErreur(r, "le blocage"));
       const j = await json(r);
-      if (!r.ok || j.status !== "ok") throw new Error(`Instagram a refusé le blocage (HTTP ${r.status}${j.message ? " : " + j.message : ""}). Arrêt par précaution.`);
+      if (j.status !== "ok") throw new Error(`Instagram n'a pas confirmé le blocage (réponse : ${j.status || "inconnue"}${j.message ? " : " + j.message : ""}). Arrêt par précaution.`);
     },
   };
 
