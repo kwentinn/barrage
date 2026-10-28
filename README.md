@@ -21,8 +21,10 @@ L'extension disparaît au redémarrage de Firefox.
 
 **Durablement, en la faisant signer par Mozilla (gratuit)** :
 1. Créer un compte sur <https://addons.mozilla.org/developers/> et générer des clés API (*Tools → Manage API Keys*).
-2. Dans `extension/manifest.json`, remplacer l'identifiant `bulkblock@local` par un identifiant unique à vous
-   (ex. `bulkblock@votre-domaine.fr`) et incrémenter `version` à chaque nouvelle soumission.
+2. Dans `extension/manifest.json`, remplacer l'identifiant (`browser_specific_settings.gecko.id`, actuellement
+   `barrage@kwentinn.github.io`) par un identifiant unique à vous, de la forme `nom@domaine`, et incrémenter `version` à chaque
+   nouvelle soumission. Un identifiant ne peut pas être réutilisé, même après la suppression du module sur AMO
+   (erreur « Un identifiant identique a été trouvé »).
 3. ```bash
    cd extension
    npx web-ext sign --channel=unlisted --api-key=<JWT issuer> --api-secret=<JWT secret>
