@@ -53,8 +53,10 @@ résume : comptes bloqués, déjà bloqués, introuvables, épargnés.
 #### Pas à pas
 Un clic sur **Bloquer et passer au suivant** : l'extension clique pour vous sur ⋯ → Bloquer → Confirmer, puis ouvre le profil suivant.
 8 s minimum entre deux blocages. **Déjà bloqué** (si vous avez bloqué le compte vous-même, ou si l'extension s'est arrêtée à la
-confirmation) et **Passer** (ne pas bloquer ce compte) sont disponibles. Les comptes déjà bloqués sont reconnus (bouton ou menu
-« Débloquer »), les profils indisponibles sont marqués « introuvable ».
+confirmation) et **Passer** (ne pas bloquer ce compte) sont disponibles. Les profils **déjà bloqués** (bouton « Débloquer » sur la page, ou dans le menu) et les profils **inaccessibles** (compte supprimé ou banni,
+bloqué par son titulaire, faute de frappe : « Cette page n’est malheureusement pas disponible ») sont reconnus dès l'arrivée sur la page
+et sautés **sans attendre le délai** ; le bouton devient « Déjà bloqué : profil suivant » ou « Profil inaccessible : suivant ».
+L'écran de fin liste les profils inaccessibles pour repérer une faute de frappe.
 
 #### Automatique
 L'extension enchaîne les profils sans intervention : pour chacun ⋯ → Bloquer → Confirmer, une pause, puis le suivant.
@@ -66,7 +68,7 @@ L'extension enchaîne les profils sans intervention : pour chacun ⋯ → Bloque
   | Rapide (« plus risqué ») | 25 | 15 à 35 s | environ 18 min |
 
   *Réglages avancés* : délais (15 s minimum) et maximum (de 1 à 30) libres. Une pause supplémentaire de 1 à 2 min s'ajoute tous les 5 blocages.
-  Les profils « déjà bloqués » ou « introuvables » ne comptent pas dans le maximum.
+  Les profils « déjà bloqués » ou « inaccessibles » ne comptent pas dans le maximum, ne déclenchent pas le délai entre deux blocages (seulement une pause de 3 à 6 s avant le profil suivant) et n'arrêtent pas le mode.
 - **Arrêt automatique** à la première erreur (bouton introuvable, confirmation à plusieurs choix, etc.), si Instagram affiche un message
   de limite (« Réessayez plus tard », « Nous limitons certaines activités »…), ou quand le maximum est atteint. Le motif est affiché.
 - **Un seul onglet** : le mode ne tourne que dans l'onglet où vous l'avez lancé ; les autres onglets Instagram ne sont jamais détournés.

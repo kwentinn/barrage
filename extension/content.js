@@ -68,6 +68,30 @@
   const apercu = (racine) => boutonsDe(racine).map((b) => norm(b.textContent)).filter(Boolean).slice(0, 8).join(" | ") || "aucun bouton";
   const dernierDialogue = () => dialogues().at(-1) || null;
 
+  // Profil déjà bloqué : un bouton « Débloquer » est affiché sur la page. Repli si Instagram ne lui donne ni <button> ni role :
+  // un élément feuille dont le texte est exactement « Débloquer ».
+  const RE_DEBLOQUER_SEUL = /^(débloquer|debloquer|unblock)$/i;
+  function dejaBloqueSurPage() {
+    if (trouver(document.body, RE_DEBLOQUER)) return true;
+    for (const el of document.body.querySelectorAll("div, span, a")) {
+      if (!el.firstElementChild && el.textContent.length < 20 && RE_DEBLOQUER_SEUL.test(norm(el.textContent)) && visible(el)) return true;
+    }
+    return false;
+  }
+
+  // Profil inaccessible : compte supprimé ou banni, bloqué par son titulaire, ou faute de frappe dans le pseudo.
+  // Texte réel d'Instagram : « Cette page n’est malheureusement pas disponible. Le lien que vous avez suivi est peut-être rompu,
+  // ou la page a été supprimée. » (apostrophe typographique, mot intercalé : on cherche des fragments, pas la phrase entière).
+  const RE_INDISPONIBLE = /pas disponible|lien que vous avez suivi|peut-être rompu|page a été supprimée|isn.t available|not available|link you followed may be broken|page may have been removed/i;
+  let cacheIndispo = { t: 0, chemin: "", v: false };
+  function pageIndisponible() {
+    if (document.querySelector('header svg[aria-label="Options"]')) return false;      // un vrai profil a son bouton « ⋯ »
+    if (cacheIndispo.chemin === location.pathname && Date.now() - cacheIndispo.t < 400) return cacheIndispo.v;
+    const v = RE_INDISPONIBLE.test(document.body.innerText || "");                       // innerText : coûteux, d'où le cache
+    cacheIndispo = { t: Date.now(), chemin: location.pathname, v };
+    return v;
+  }
+
   // Instagram signale une limite ou une activité suspecte : on s'arrête, quoi qu'il arrive.
   function verifierLimite() {
     for (const d of dialogues()) {
@@ -81,14 +105,18 @@
     // 1. Profil déjà bloqué (bouton « Débloquer » sur la page) ou bouton « ⋯ » (aria-label « Options ») dans l'en-tête
     const pret = await attendreQue(() => {
       verifierLimite();
-      if (trouver(document.body, RE_DEBLOQUER)) return "deja";
-      const svg = document.querySelector('header svg[aria-label="Options"]') || document.querySelector('svg[aria-label="Options"]');
-      return svg && (svg.closest('[role="button"], button') || svg.parentElement);
+      if (dejaBloqueSurPage()) return "deja";
+      const svgEntete = document.querySelector('header svg[aria-label="Options"]');
+      if (svgEntete) return svgEntete.closest('[role="button"], button') || svgEntete.parentElement;
+      if (pageIndisponible()) return "introuvable";                                      // pas la peine d'attendre 8 s
+      const svg = document.querySelector('svg[aria-label="Options"]');                   // repli : « ⋯ » hors de l'en-tête
+      return svg ? (svg.closest('[role="button"], button') || svg.parentElement) : null;
     });
     if (pret === "deja") return "deja";
+    if (pret === "introuvable") return "introuvable";
     const boutonOptions = pret;
     if (!boutonOptions) {
-      if (/n.est pas disponible|isn.t available|not available|introuvable/i.test(document.body.innerText)) return "introuvable";
+      if (pageIndisponible()) return "introuvable";
       throw new Error(`Bouton « ⋯ » (Options) introuvable sur ce profil. L'interface d'Instagram a peut-être changé. Boutons vus : ${apercu(document.body)}.`);
     }
     boutonOptions.click();
@@ -128,7 +156,7 @@
     const info = dernierDialogue();
     const ok = info && trouver(info, /^(ok|fermer|close)$/i);
     if (ok) ok.click();
-    const verifie = await attendreQue(() => trouver(document, RE_DEBLOQUER), 4000);
+    const verifie = await attendreQue(dejaBloqueSurPage, 4000);
     return verifie ? "bloque" : "bloque-non-verifie";
   }
 
@@ -386,15 +414,21 @@
     const vals = Object.values(etat.faits);
     const bloques = vals.filter((v) => v.startsWith("bloqué")).length;
     const deja = vals.filter((v) => v === "déjà bloqué").length;
-    const introuvables = Object.keys(etat.introuvables).length;
+    const perdus = Object.keys(etat.introuvables);
+    const introuvables = perdus.length;
     return [
       h("p", { class: "etape" }, "Terminé"),
       h("h3", {}, "Tous les comptes sont traités"),
       h("div", { class: "resume" },
         `${pl(bloques, "compte")} ${bloques > 1 ? "bloqués" : "bloqué"}`, h("br"),
         `${pl(deja, "compte")} ${deja > 1 ? "étaient" : "était"} déjà bloqué${deja > 1 ? "s" : ""}`, h("br"),
-        `${pl(introuvables, "profil")} introuvable${introuvables > 1 ? "s" : ""}`, h("br"),
+        `${pl(introuvables, "profil")} inaccessible${introuvables > 1 ? "s" : ""}`, h("br"),
         `${pl(etat.exclus.length, "compte")} épargné${etat.exclus.length > 1 ? "s" : ""}`),
+      // Profils inaccessibles : compte supprimé ou banni, bloqué par son titulaire, ou faute de frappe dans la liste.
+      introuvables ? h("div", {},
+        h("p", { class: "petit" }, "Inaccessibles (compte supprimé, banni, ou faute de frappe dans la liste) :"),
+        h("div", { class: "resume", style: "user-select:text;word-break:break-word" },
+          perdus.slice(0, 30).map((c) => "@" + c).join(", ") + (introuvables > 30 ? ` … et ${introuvables - 30} autres` : ""))) : null,
       rangee(btn("Charger une autre liste", "autre-liste", () => allerA("liste")), btn("Fermer", "fermer", () => { ouvert = false; sauver(); rendre(); }, "pri")),
     ];
   }
@@ -405,6 +439,15 @@
     const ecrans = { liste: ecranListe, comptes: ecranComptes, verif: ecranVerif, mode: ecranMode, encours: ecranEncours, fin: ecranFin };
     $("contenu").replaceChildren(...ecrans[ecran]().filter(Boolean));
     majDynamique();
+  }
+
+  // dejaBloqueSurPage() et pageIndisponible() parcourent le DOM : l'affichage ne les rappelle pas plus d'une fois par seconde.
+  let cacheProfil = { t: 0, chemin: "", v: null };
+  function etatProfilEnCache() {
+    if (cacheProfil.chemin !== location.pathname || Date.now() - cacheProfil.t > 1000) {
+      cacheProfil = { t: Date.now(), chemin: location.pathname, v: dejaBloqueSurPage() ? "deja" : pageIndisponible() ? "introuvable" : null };
+    }
+    return cacheProfil.v;
   }
 
   // Parties vivantes de l'écran de suivi (compte à rebours, boutons) ; la navigation d'Instagram ne recharge pas toujours la page.
@@ -426,9 +469,12 @@
       return;
     }
     const restant = Math.max(0, Math.ceil((dernier + DELAI_ENTRE_BLOCAGES_S * 1000 - Date.now()) / 1000));
+    const etatPage = cible ? etatProfilEnCache() : null;             // le délai ne vaut que pour un vrai blocage
+    if (etatPage === "deja") refs.sous.textContent += " · déjà bloqué sur Instagram";
+    if (etatPage === "introuvable") refs.sous.textContent += " · profil inaccessible";
     refs.btnBloquer.hidden = !cible;
-    refs.btnBloquer.disabled = occupe || restant > 0;
-    refs.btnBloquer.textContent = occupe ? "En cours…" : restant > 0 ? `Patientez ${restant} s…` : "Bloquer et passer au suivant";
+    refs.btnBloquer.disabled = occupe || (restant > 0 && !etatPage);
+    refs.btnBloquer.textContent = occupe ? "En cours…" : etatPage === "deja" ? "Déjà bloqué : profil suivant" : etatPage === "introuvable" ? "Profil inaccessible : suivant" : restant > 0 ? `Patientez ${restant} s…` : "Bloquer et passer au suivant";
     refs.btnAller.hidden = !!cible || !suivant; refs.btnAller.disabled = occupe;
     refs.rangeeSecondaire.hidden = !cible; refs.btnFait.disabled = occupe; refs.btnPasser.disabled = occupe;
   }
@@ -488,11 +534,12 @@
     rendre();
   }
 
-  // Attente avec compte à rebours ; false si le mode a été arrêté entre-temps.
-  async function attendreAuto(ms, libelle) {
+  // Attente avec compte à rebours ; false si le mode a été arrêté entre-temps, "coupe" si arretSi() devient vrai.
+  async function attendreAuto(ms, libelle, arretSi) {
     const fin = Date.now() + ms;
     while (Date.now() < fin) {
       if (!auto.actif || autoAnnule) return false;
+      if (arretSi && arretSi()) return "coupe";
       statutAuto = `${libelle} dans ${Math.ceil((fin - Date.now()) / 1000)} s`;
       majDynamique();
       await pause(Math.min(500, Math.max(0, fin - Date.now())));
@@ -524,7 +571,11 @@
         return;
       }
       if (auto.bloques >= auto.max) { arreterAuto(`Maximum atteint (${auto.max} blocages). Reprenez plus tard pour rester discret.`); return; }
-      if (Date.now() < auto.prochainA && !(await attendreAuto(auto.prochainA - Date.now(), `Prochain blocage (@${cible.compte})`))) return;
+      if (Date.now() < auto.prochainA) {
+        // Le délai ne vaut que pour un vrai blocage : si le profil est déjà bloqué ou inaccessible, on le constate tout de suite.
+        const att = await attendreAuto(auto.prochainA - Date.now(), `Prochain blocage (@${cible.compte})`, () => dejaBloqueSurPage() || pageIndisponible());
+        if (att === false) return;
+      }
 
       occupe = true; statutAuto = `Traitement de @${cible.compte}…`; majDynamique();
       let res;
@@ -537,7 +588,9 @@
         auto.prochainA = Date.now() + aleaMs(options.delaiMinS, options.delaiMaxS)
           + (auto.bloques % PAUSE_LONGUE.tousLes === 0 ? aleaMs(PAUSE_LONGUE.minS, PAUSE_LONGUE.maxS) : 0);
       } else {
-        auto.prochainA = Math.max(auto.prochainA, Date.now() + aleaMs(2, 5));  // « déjà bloqué » / « introuvable » : courte pause
+        // « déjà bloqué » / « introuvable » : pas de nouveau délai de blocage, juste une courte pause avant le profil suivant
+        await sauver();
+        if (!(await attendreAuto(aleaMs(3, 6), "Profil suivant"))) return;
       }
       await sauver();
       await ouvrirSuivantAuto(cible.compte);

@@ -8,7 +8,8 @@
 <body>
 <!-- Simulation du DOM supposé d'Instagram (⋯ aria-label="Options", menu et confirmation en role="dialog").
      Cas particuliers : /ghost/ = page indisponible ; /multichoix/ = confirmation avec plusieurs choix ;
-     /limite/ = Instagram signale une limite ; /preblocked/ = déjà bloqué. -->
+     /limite/ = Instagram signale une limite ; /preblocked/ = déjà bloqué ;
+     /sansrole/ = déjà bloqué, « Débloquer » dans un simple <div>. -->
 <header>
   <h2 id="nom"></h2>
   <div role="button" id="opt" tabindex="0"><svg aria-label="Options" width="24" height="24" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
@@ -33,9 +34,15 @@
   const maj = () => { $("suivre").textContent = bloque() ? (user === "preblocked" ? "Débloquer @preblocked" : "Débloquer") : "Suivre"; };
   maj();
 
-  if (user === "ghost") {
+  // /sansrole/ : déjà bloqué, mais « Débloquer » est un simple <div> (ni bouton ni role) et il n'y a pas de ⋯
+  if (user === "sansrole") {
+    localStorage.setItem(cle, "1"); $("opt").remove();
+    const d = document.createElement("div"); d.textContent = "Débloquer"; $("suivre").replaceWith(d);
+  }
+
+  if (user === "ghost" || user.startsWith("typo")) {
     document.querySelector("header").remove();
-    $("corps").textContent = "Désolé, cette page n'est pas disponible.";
+    $("corps").innerHTML = "<h2>Cette page n’est malheureusement pas disponible.</h2><p>Le lien que vous avez suivi est peut-être rompu, ou la page a été supprimée.</p><div role=\"button\" id=\"parasite\"><svg aria-label=\"Options\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"3\"/></svg></div>";
   }
 
   function dialogue(boutons, texte) {
