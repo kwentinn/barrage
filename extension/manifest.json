@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Barrage pour Instagram",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bloque, depuis votre session instagram.com, les comptes d'une liste que vous importez : pas à pas (un clic par profil) ou en mode automatique avec garde-fous. Rien n'est envoyé hors d'Instagram.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.instagram.com/*"],
