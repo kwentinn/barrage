@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "BulkBlock",
+  "version": "0.1.0",
+  "description": "Bloque, depuis votre session instagram.com et à votre rythme, les comptes d'une liste que vous importez (fichier ou texte). Rien n'est envoyé hors d'Instagram.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.instagram.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["core.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "bulkblock@local",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  }
+}

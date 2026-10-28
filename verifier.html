@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qui suis-je sur Instagram ?</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --muted:#6b6560; --card:#fff; --line:#e7e5e4; --accent:#b4231a; --ok:#166534; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161412; --fg:#f5f5f4; --muted:#a8a29e; --card:#211e1c; --line:#3a3532; --accent:#ef6a5e; --ok:#4ade80; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px; }
+  ol { padding-left:20px; margin:8px 0 0; } li { margin:4px 0; }
+  #drop { border:2px dashed var(--line); border-radius:12px; padding:32px 16px; text-align:center; cursor:pointer; color:var(--muted); }
+  #drop.over, #drop:focus-visible { border-color:var(--accent); color:var(--fg); outline:none; }
+  #drop strong { color:var(--fg); }
+  #erreur { color:var(--accent); margin-top:12px; }
+  #resultat h2 { margin:0 0 4px; font-size:1.2rem; }
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:.95rem; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; }
+  a { color:var(--accent); }
+  .ok { color:var(--ok); }
+  small, .note { color:var(--muted); font-size:.85rem; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <nav style="margin-bottom:20px;font-size:.9rem"><a href="index.html">← Liste de blocage</a></nav>
+  <h1>Qui suis-je sur Instagram ?</h1>
+  <p class="sub">Compare les comptes que vous suivez à une liste de comptes d'extrême droite française (partis, médias, personnalités).</p>
+
+  <section class="card">
+    <strong>Vos données ne quittent pas votre navigateur.</strong>
+    <small>Aucun mot de passe, aucun envoi vers un serveur : le fichier est lu et comparé localement.</small>
+    <ol>
+      <li>Instagram → <em>Paramètres</em> → <em>Centre de comptes</em> → <em>Vos informations et autorisations</em> → <em>Télécharger vos informations</em>.</li>
+      <li>Choisissez <em>Abonnés et abonnements</em>, format <strong>JSON</strong> ou HTML, période « Depuis le début ».</li>
+      <li>Déposez ci-dessous le .zip reçu (ou le fichier <code>following.json</code> / <code>following.html</code>).</li>
+    </ol>
+  </section>
+
+  <div id="drop" tabindex="0" role="button" aria-label="Choisir un fichier">
+    <strong>Déposez votre export ici</strong><br>ou cliquez pour choisir un fichier (.zip, .json, .html)
+    <input id="fichier" type="file" accept=".zip,.json,.html" hidden>
+  </div>
+  <div id="erreur" role="alert"></div>
+
+  <section id="resultat" class="card" hidden style="margin-top:20px">
+    <h2 id="titre"></h2>
+    <small id="detail"></small>
+    <table id="tableau" hidden>
+      <thead><tr><th>Compte</th><th>Nature</th><th>Classement (Wikidata)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <p class="note">
+    Source : <a href="https://www.wikidata.org">Wikidata</a>, base collaborative. Le classement « extrême droite » provient de ses contributeurs et reste contesté ;
+    la liste est incomplète et peut contenir des erreurs. Elle sert d'indication, pas de verdict.
+  </p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="comptes.js"></script>
+<script src="extraction.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const drop = $("drop"), input = $("fichier");
+
+drop.addEventListener("click", () => input.click());
+drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); traiter(e.dataTransfer.files[0]); });
+input.addEventListener("change", () => traiter(input.files[0]));
+
+async function lireAbonnements(fichier) {
+  if (!/\.zip$/i.test(fichier.name)) return extraire(fichier.name, await fichier.text());
+  const zip = await JSZip.loadAsync(fichier);
+  const comptes = new Set();
+  for (const [chemin, entree] of Object.entries(zip.files)) {
+    if (entree.dir || !estFichierAbonnements(chemin)) continue;
+    extraire(chemin, await entree.async("string")).forEach((c) => comptes.add(c));
+  }
+  return comptes;
+}
+
+async function traiter(fichier) {
+  $("erreur").textContent = "";
+  $("resultat").hidden = true;
+  if (!fichier) return;
+  try {
+    const suivis = await lireAbonnements(fichier);
+    if (!suivis.size) throw new Error("Aucun abonnement trouvé. Vérifiez qu'il s'agit bien de l'export « Abonnés et abonnements » (following.json / following.html).");
+    afficher(suivis);
+  } catch (err) {
+    $("erreur").textContent = err.message || "Fichier illisible.";
+  }
+}
+
+function afficher(suivis) {
+  const trouves = window.COMPTES.filter((c) => suivis.has(c.compte));
+  $("resultat").hidden = false;
+  $("titre").textContent = trouves.length
+    ? `${trouves.length} compte${trouves.length > 1 ? "s" : ""} sur ${window.COMPTES.length} dans la liste`
+    : "Aucun compte de la liste dans vos abonnements";
+  $("titre").className = trouves.length ? "" : "ok";
+  $("detail").textContent = `${suivis.size} abonnements analysés.`;
+  const tbody = document.querySelector("#tableau tbody");
+  tbody.replaceChildren();
+  for (const c of trouves) {
+    const tr = tbody.insertRow();
+    const a = Object.assign(document.createElement("a"), { href: `https://www.instagram.com/${c.compte}/`, textContent: c.nom, target: "_blank", rel: "noopener" });
+    tr.insertCell().append(a);
+    tr.insertCell().textContent = c.type || "—";
+    tr.insertCell().textContent = c.classement;
+  }
+  $("tableau").hidden = !trouves.length;
+}
+</script>
+</body>
+</html>

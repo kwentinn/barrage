@@ -1,0 +1,25 @@
+# Dépendances et artefacts de build
+node_modules/
+extension/web-ext-artifacts/
+web-ext-artifacts/
+*.xpi
+*.zip
+
+# Secrets (clés API AMO pour web-ext sign, etc.)
+.env
+.env.*
+*.pem
+*.key
+
+# Config locale d'outils / éditeurs
+.claude/
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Sorties locales
+*.log
