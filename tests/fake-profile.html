@@ -27,7 +27,9 @@
   const bloque = () => localStorage.getItem(cle) === "1";
   const $ = (id) => document.getElementById(id);
   $("nom").textContent = user;
-  const maj = () => { $("suivre").textContent = bloque() ? "Débloquer" : "Suivre"; };
+  // /preblocked/ : profil déjà bloqué, sans bouton « ⋯ » ; le bouton d'en-tête devient « Débloquer @compte »
+  if (user === "preblocked") { localStorage.setItem(cle, "1"); $("opt").remove(); }
+  const maj = () => { $("suivre").textContent = bloque() ? (user === "preblocked" ? "Débloquer @preblocked" : "Débloquer") : "Suivre"; };
   maj();
 
   if (user === "ghost") {

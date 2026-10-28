@@ -22,7 +22,7 @@
   const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
   const visible = (el) => el.getClientRects().length > 0;
   const RE_BLOQUER = /^(bloquer|block)$/i;
-  const RE_DEBLOQUER = /^(débloquer|debloquer|unblock)$/i;
+  const RE_DEBLOQUER = /^(débloquer|debloquer|unblock)(\s|$)/i; // aussi « Débloquer @compte », « Unblock user »…
 
   async function attendreQue(fn, ms = 8000, pas = 150) {
     const t0 = Date.now();
@@ -41,14 +41,17 @@
 
   // Retourne "bloque" | "deja" | "introuvable", ou lève une erreur décrivant l'étape qui a échoué.
   async function executerBlocage() {
-    // 1. Bouton « ⋯ » (aria-label « Options ») dans l'en-tête du profil
-    const options = await attendreQue(() => {
+    // 1. Profil déjà bloqué (bouton « Débloquer » sur la page) ou bouton « ⋯ » (aria-label « Options ») dans l'en-tête
+    const pret = await attendreQue(() => {
+      if (trouver(document.body, RE_DEBLOQUER)) return "deja";
       const svg = document.querySelector('header svg[aria-label="Options"]') || document.querySelector('svg[aria-label="Options"]');
       return svg && (svg.closest('[role="button"], button') || svg.parentElement);
     });
+    if (pret === "deja") return "deja";
+    const options = pret;
     if (!options) {
       if (/n.est pas disponible|isn.t available|not available|introuvable/i.test(document.body.innerText)) return "introuvable";
-      throw new Error("Bouton « ⋯ » (Options) introuvable sur ce profil. L'interface d'Instagram a peut-être changé.");
+      throw new Error(`Bouton « ⋯ » (Options) introuvable sur ce profil. L'interface d'Instagram a peut-être changé. Boutons vus : ${apercu(document.body)}.`);
     }
     options.click();
 
