@@ -1,4 +1,4 @@
-# BulkBlock
+# Barrage pour Instagram
 
 | Pièce | Rôle |
 |---|---|
@@ -35,7 +35,7 @@ L'extension disparaît au redémarrage de Firefox.
    (`xpinstall.signatures.required` = false).
 
 ### Utiliser (mode pas à pas)
-1. Ouvrir <https://www.instagram.com> connecté : bouton **BulkBlock** en bas à gauche.
+1. Ouvrir <https://www.instagram.com> connecté : bouton **Barrage** en bas à gauche.
 2. **Importer une liste** (fichier ou texte collé). Elle est mémorisée dans le navigateur.
 3. **Choisir les comptes** : décocher ceux à ne pas bloquer.
 4. **Ouvrir le prochain profil**, puis **Bloquer et passer au suivant** : l'extension clique pour vous sur ⋯ → Bloquer → Confirmer,

@@ -112,9 +112,9 @@
   textarea { width: 100%; font: 12px/1.3 ui-monospace, monospace; padding: 6px; border: 1px solid #d6d3d1; border-radius: 8px; resize: vertical; }
   ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow: auto; } li { display: flex; gap: 6px; align-items: center; padding: 2px 0; font-size: 13px; } li .st { margin-left: auto; font-size: 12px; color: #166534; }
 </style>
-<button id="ouvrir" type="button">BulkBlock</button>
+<button id="ouvrir" type="button">Barrage</button>
 <section id="panneau" hidden>
-  <h2>BulkBlock</h2>
+  <h2>Barrage</h2>
   <div id="resume"></div><div class="bar"><div id="barre"></div></div>
   <div id="cible"></div>
   <div class="rang"><button id="bloquer" class="go" type="button">Bloquer et passer au suivant</button><button id="aller" class="go" type="button">Ouvrir le prochain profil</button></div>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "BulkBlock",
-  "version": "0.1.1",
+  "name": "Barrage pour Instagram",
+  "version": "0.1.2",
   "description": "Bloque pas à pas, depuis votre session instagram.com, les comptes d'une liste que vous importez : un clic par profil, avec les gestes habituels de l'interface. Rien n'est envoyé hors d'Instagram.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.instagram.com/*"],
