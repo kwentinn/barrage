@@ -335,7 +335,7 @@
         h("button", { type: "button", class: options.preset === cle ? "sel" : "", "data-act": "preset-" + cle, "aria-pressed": String(options.preset === cle), on: { click: () => choisirPreset(cle) } }, p.nom))),
       h("div", { class: "resume" },
         `${options.maxParSession} blocages maximum`, h("br"),
-        `${options.delaiMinS} à ${options.delaiMaxS} s entre deux`, h("br"),
+        `${options.delaiMinS} à ${options.delaiMaxS} s entre deux`, h("br"),
         `Environ ${dureeMin(options)} min au total`),
       options.preset === "rapide" ? h("div", { class: "warn" }, "Plus rapide, donc plus risqué.") : null,
       h("details", { class: "avance" }, h("summary", {}, "Réglages avancés"),
@@ -374,7 +374,7 @@
       refs.btnAller = btn("Ouvrir le prochain profil", "aller", () => passerAuSuivant(null), "pri");
       refs.btnFait = btn("Déjà bloqué", "fait", marquerFait); refs.btnPasser = btn("Passer", "passer", passerCompte);
       refs.rangeeSecondaire = rangee(refs.btnFait, refs.btnPasser);
-      corps = [rangee(refs.btnBloquer, refs.btnAller), refs.rangeeSecondaire, h("p", { class: "petit" }, `Au moins ${DELAI_ENTRE_BLOCAGES_S} s entre deux blocages.`)];
+      corps = [rangee(refs.btnBloquer, refs.btnAller), refs.rangeeSecondaire, h("p", { class: "petit" }, `Au moins ${DELAI_ENTRE_BLOCAGES_S} s entre deux blocages.`)];
     }
     return [...haut, ...corps, refs.journal,
       h("div", { class: "coches", style: "margin-top:12px" },
@@ -428,7 +428,7 @@
     const restant = Math.max(0, Math.ceil((dernier + DELAI_ENTRE_BLOCAGES_S * 1000 - Date.now()) / 1000));
     refs.btnBloquer.hidden = !cible;
     refs.btnBloquer.disabled = occupe || restant > 0;
-    refs.btnBloquer.textContent = occupe ? "En cours…" : restant > 0 ? `Patientez ${restant} s…` : "Bloquer et passer au suivant";
+    refs.btnBloquer.textContent = occupe ? "En cours…" : restant > 0 ? `Patientez ${restant} s…` : "Bloquer et passer au suivant";
     refs.btnAller.hidden = !!cible || !suivant; refs.btnAller.disabled = occupe;
     refs.rangeeSecondaire.hidden = !cible; refs.btnFait.disabled = occupe; refs.btnPasser.disabled = occupe;
   }
@@ -493,7 +493,7 @@
     const fin = Date.now() + ms;
     while (Date.now() < fin) {
       if (!auto.actif || autoAnnule) return false;
-      statutAuto = `${libelle} dans ${Math.ceil((fin - Date.now()) / 1000)} s`;
+      statutAuto = `${libelle} dans ${Math.ceil((fin - Date.now()) / 1000)} s`;
       majDynamique();
       await pause(Math.min(500, Math.max(0, fin - Date.now())));
     }
