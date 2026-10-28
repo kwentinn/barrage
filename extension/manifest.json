@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BulkBlock",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bloque pas à pas, depuis votre session instagram.com, les comptes d'une liste que vous importez : un clic par profil, avec les gestes habituels de l'interface. Rien n'est envoyé hors d'Instagram.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.instagram.com/*"],
@@ -15,8 +15,11 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "bulkblock@local",
-      "strict_min_version": "128.0",
+      "strict_min_version": "140.0",
       "data_collection_permissions": { "required": ["none"] }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
     }
   }
 }
