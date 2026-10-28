@@ -48,6 +48,18 @@ L'extension disparaît au redémarrage de Firefox.
    - Les comptes déjà bloqués sont reconnus (menu « Débloquer »), les profils indisponibles sont marqués « introuvable ».
 5. La progression est mémorisée : reprenez quand vous voulez.
 
+### Mode automatique
+**Mode automatique…** enchaîne les profils sans intervention : pour chacun il fait ⋯ → Bloquer → Confirmer, patiente, ouvre le suivant, etc.
+- **Garde-fous** : délai aléatoire entre deux blocages (25 à 60 s par défaut, 15 s minimum), pause supplémentaire de 1 à 2 min tous les
+  5 blocages, **maximum de 10 blocages par session** (réglable de 1 à 30). Les profils « déjà bloqués » ou « introuvables » ne comptent
+  pas dans le maximum.
+- **Arrêt automatique** à la première erreur (bouton introuvable, confirmation à plusieurs choix, etc.), si Instagram affiche un message de
+  limite (« Réessayez plus tard », « Nous limitons certaines activités »…), ou quand le maximum est atteint. Le motif est affiché dans le panneau.
+- **Un seul onglet** : le mode ne tourne que dans l'onglet où vous l'avez lancé ; les autres onglets Instagram ne sont jamais détournés.
+  Gardez l'onglet ouvert. Le bouton **Arrêter le mode automatique** est toujours disponible.
+- C'est **plus risqué** que le pas à pas : un comportement régulier et sans intervention ressemble à un robot. Gardez de petites sessions
+  et espacez-les. Si Instagram limite votre compte, arrêtez-vous plusieurs heures.
+
 ### Ce qu'il faut savoir
 - Elle **n'appelle aucune API** : elle actionne l'interface web d'Instagram, avec votre session déjà ouverte. Pas de mot de passe,
   pas de serveur tiers. L'API interne `web_profile_info` renvoyait systématiquement HTTP 429 (essayée sur un vrai compte), d'où ce mode.
@@ -55,11 +67,11 @@ L'extension disparaît au redémarrage de Firefox.
   change son interface, elle **s'arrête et indique l'étape** (avec les boutons vus) : utilisez alors *Déjà bloqué, suivant* après avoir
   bloqué à la main. Si la confirmation propose plusieurs choix (ex. « et d'autres comptes possibles »), elle s'arrête aussi plutôt
   que de choisir à votre place.
-- Cela reste un usage automatisé de l'interface, hors du cadre strict des CGU d'Instagram ; le rythme d'un clic par profil limite le risque
-  de limitation temporaire des actions, sans l'éliminer.
-- **Pas encore essayée sur de vrais profils.** Testé : la logique (`node --test tests/`), le parcours complet sur un faux profil
-  (`tests/fake-profile.html` : blocage, déjà bloqué, page indisponible, confirmation à plusieurs choix) et `web-ext lint`.
-  Faites un premier essai avec **un seul compte**.
+- Cela reste un usage automatisé de l'interface, hors du cadre strict des CGU d'Instagram ; le rythme d'un clic par profil (pas à pas)
+  limite le risque de limitation temporaire des actions, sans l'éliminer, et le mode automatique l'augmente.
+- **Le pas à pas fonctionne sur de vrais profils** (retour d'usage). **Le mode automatique n'a été testé que sur un faux profil**
+  (`tests/fake-profile.html` : plafond de session, profil indisponible, message de limite, arrêt manuel, protection des autres onglets),
+  avec `node --test tests/` et `web-ext lint`. Pour un premier essai réel, réglez le **maximum par session à 2 ou 3**.
 
 ### Développer
 ```bash

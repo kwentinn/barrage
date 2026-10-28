@@ -7,7 +7,8 @@
 </style></head>
 <body>
 <!-- Simulation du DOM supposé d'Instagram (⋯ aria-label="Options", menu et confirmation en role="dialog").
-     Cas particuliers : /ghost/ = page indisponible ; /multichoix/ = confirmation avec plusieurs choix. -->
+     Cas particuliers : /ghost/ = page indisponible ; /multichoix/ = confirmation avec plusieurs choix ;
+     /limite/ = Instagram signale une limite ; /preblocked/ = déjà bloqué. -->
 <header>
   <h2 id="nom"></h2>
   <div role="button" id="opt" tabindex="0"><svg aria-label="Options" width="24" height="24" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
@@ -37,9 +38,10 @@
     $("corps").textContent = "Désolé, cette page n'est pas disponible.";
   }
 
-  function dialogue(boutons) {
+  function dialogue(boutons, texte) {
     document.querySelectorAll("[role=dialog]").forEach((d) => d.remove());
     const d = document.createElement("div"); d.setAttribute("role", "dialog");
+    if (texte) { const p = document.createElement("p"); p.textContent = texte; d.append(p); }
     for (const [texte, action] of boutons) {
       const b = document.createElement("button"); b.textContent = texte;
       b.onclick = () => setTimeout(action, 200); d.append(b);
@@ -54,6 +56,9 @@
   }, 150));
 
   function confirmation() {
+    if (user === "limite") {
+      return dialogue([["OK", fermer]], "Nous limitons certaines activités pour protéger notre communauté. Réessayez plus tard.");
+    }
     if (user === "multichoix") {
       return dialogue([[`Bloquer le compte de ${user}`, fermer], [`Bloquer ${user} et d'autres comptes possibles`, fermer], ["Annuler", fermer]]);
     }
