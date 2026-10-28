@@ -6,6 +6,7 @@
 | `liste-extreme-droite.json` | La liste (76 comptes), au format importable dans l'extension. |
 | `index.html` / `verifier.html` | Site statique : liste de liens à bloquer à la main, et comparaison avec un export Instagram. |
 | `extension/` | **Extension Firefox** : bloque les comptes d'une liste **importée**, depuis votre session instagram.com. |
+| `docs/` | **Site de présentation** de l'extension (explications + téléchargement), prêt pour GitHub Pages. Ne contient aucune liste de comptes. |
 
 ## Extension Firefox
 
@@ -67,6 +68,25 @@ cd extension && npx web-ext lint
 cd extension && npx web-ext run   # lance Firefox avec l'extension
 node serve.js                     # puis http://localhost:5173/alice/ : faux profil Instagram pour essayer le parcours sans Instagram
 ```
+
+## Site de présentation (GitHub Pages)
+
+`docs/index.html` est une page statique (aucune dépendance) qui présente l'extension, explique son fonctionnement et propose le téléchargement.
+Le bouton pointe vers `docs/barrage.xpi` ; tant que ce fichier est absent, la page désactive le bouton et l'indique.
+
+**Mettre en ligne**
+1. Après chaque signature par Mozilla, copier le `.xpi` signé dans `docs/` sous le nom `barrage.xpi`, et mettre à jour la constante
+   `VERSION` en bas de `docs/index.html`.
+2. Sur GitHub : *Settings → Pages → Build and deployment* : source **Deploy from a branch**, branche `main`, dossier **/docs**.
+3. Le site est servi à `https://<compte>.github.io/<dépôt>/`.
+
+**À savoir**
+- GitHub Pages n'est disponible que pour les dépôts **publics** avec un compte gratuit (les dépôts privés demandent une offre payante),
+  et le site publié est public. Si ce dépôt reste privé, créer un petit dépôt public contenant seulement `docs/` (page + `barrage.xpi`).
+- Rendre ce dépôt public publierait aussi `liste-extreme-droite.json`, le script Wikidata et les pages `index.html` / `verifier.html` à la racine.
+- Selon le type MIME servi pour `.xpi`, Firefox propose l'installation directe ou télécharge simplement le fichier ; la page indique
+  comment l'installer dans les deux cas.
+- Les mises à jour de l'extension sont manuelles tant que le manifeste ne déclare pas d'`update_url` (un fichier `updates.json` hébergé sur le site).
 
 ## Avertissement sur la liste
 Le classement vient de Wikidata (contributeurs bénévoles) : il est contesté, incomplet, et peut contenir des erreurs. Relisez-la avant de
